@@ -1,0 +1,67 @@
+version: '3'
+
+services:
+  eureka-server:
+    build:
+      context: ./eureka-server
+    image: eureka-server:latest
+    ports:
+      - 8666:8666
+    command:
+      - "--eureka-address=127.0.0.1"
+  
+  user-service:
+    build:
+      context: ./user-service
+    image: user-service:latest
+    depends_on:
+      - eureka-server
+    links:
+      - eureka-server
+    command:
+      - "--mysql-address=10.104.203.219"
+      - "--redis-address=10.104.203.219"
+      - "--nginx-address=134.175.64.74"
+  
+  house-service:
+    build:
+      context: ./house-service
+    image: house-service:latest
+    depends_on:
+      - eureka-server
+    links:
+      - eureka-server
+    command:
+      - "--mysql-address=10.104.203.219"
+      - "--redis-address=10.104.203.219"
+      - "--nginx-address=134.175.64.74"
+
+  comment-service:
+    build:
+      context: ./comment-service
+    image: comment-service:latest
+    depends_on:
+      - eureka-server
+    links:
+      - eureka-server
+    command:
+      - "--mysql-address=10.104.203.219"
+      - "--redis-address=10.104.203.219"
+      - "--nginx-address=134.175.64.74"
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    image: api-gateway:latest
+    depends_on:
+      - eureka-server
+    links:
+      - eureka-server
+    volumes:
+      - ~/house-project/apps/nginx/images:/images
+    ports:
+      - 8070:8070
+      - 8023:8023
+    command:
+      - "--nginx-address=134.175.64.74"
+      - "--domain-address=134.175.64.74"

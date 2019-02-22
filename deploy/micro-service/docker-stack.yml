@@ -1,0 +1,97 @@
+version: "3.4"
+
+services:
+  eureka-server:
+    image: eureka-server:latest
+    deploy:
+      endpoint_mode: vip      
+      replicas: 1
+      restart_policy:
+        condition: on-failure      
+      placement:
+        constraints: [node.role == manager]      
+    ports:
+      - 8666:8666
+    command:
+      - "--eureka-address=127.0.0.1"
+    networks:
+      - pitong-overlay
+  
+  user-service:
+    image: user-service:latest
+    depends_on:
+      - eureka-server
+    deploy:
+      endpoint_mode: dnsrr      
+      replicas: 2      
+      restart_policy:
+        condition: on-failure      
+    command:
+      - "--mysql-address=10.104.203.219"
+      - "--redis-address=10.104.203.219"
+      - "--nginx-address=134.175.64.74"
+    networks:
+      - pitong-overlay
+  
+  house-service:
+    image: house-service:latest
+    depends_on:
+      - eureka-server
+    deploy:
+      endpoint_mode: dnsrr      
+      replicas: 1      
+      restart_policy:
+        condition: on-failure      
+      placement:
+        constraints: [node.role == manager]      
+    command:
+      - "--mysql-address=10.104.203.219"
+      - "--redis-address=10.104.203.219"
+      - "--nginx-address=134.175.64.74"
+    networks:
+      - pitong-overlay
+
+  comment-service:
+    image: comment-service:latest
+    depends_on:
+      - eureka-server
+    deploy:
+      endpoint_mode: dnsrr      
+      replicas: 1      
+      restart_policy:
+        condition: on-failure      
+      placement:
+        constraints: [node.role == manager]      
+    command:
+      - "--mysql-address=10.104.203.219"
+      - "--redis-address=10.104.203.219"
+      - "--nginx-address=134.175.64.74"
+    networks:
+      - pitong-overlay
+
+  api-gateway:
+    image: api-gateway:latest
+    depends_on:
+      - eureka-server
+    volumes:
+      - ~/house-project/apps/nginx/images:/images
+    ports:
+      - 8070:8070
+      - 8023:8023
+    deploy:
+      endpoint_mode: vip      
+      replicas: 1      
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role == manager]      
+    command:
+      - "--nginx-address=134.175.64.74"
+      - "--domain-address=134.175.64.74"
+    networks:
+      - pitong-overlay
+
+networks:
+  pitong-overlay:
+    driver: overlay
+
